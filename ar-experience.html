@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AR Billboard Experience</title>
+
+    <!-- Three.js for 3D model rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
+
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
@@ -20,6 +25,15 @@
             width: 100%; height: 100%;
             object-fit: cover;
             z-index: 1;
+        }
+
+        /* 3D Canvas overlay */
+        #three-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 11;
+            pointer-events: none;
         }
 
         /* Dark overlay for intro */
@@ -65,7 +79,7 @@
             font-family: inherit;
         }
 
-        /* === AR Content Layer === */
+        /* === AR Content Layer (for 2D elements) === */
         #ar-layer {
             position: fixed;
             top: 0; left: 0;
@@ -83,10 +97,9 @@
             width: 280px;
             opacity: 0;
             transition: opacity 0.6s ease;
+            z-index: 12;
         }
-        .billboard.visible {
-            opacity: 1;
-        }
+        .billboard.visible { opacity: 1; }
 
         .billboard-frame {
             position: relative;
@@ -110,7 +123,6 @@
             position: relative;
             overflow: hidden;
         }
-
         .billboard-screen::before {
             content: '';
             position: absolute;
@@ -125,23 +137,16 @@
         }
 
         .billboard-text {
-            color: #fff;
-            font-size: 16px;
-            font-weight: bold;
-            line-height: 1.4;
-            z-index: 1;
+            color: #fff; font-size: 16px;
+            font-weight: bold; line-height: 1.4; z-index: 1;
         }
         .billboard-subtext {
-            color: #00d4ff;
-            font-size: 12px;
-            margin-top: 6px;
-            z-index: 1;
+            color: #00d4ff; font-size: 12px;
+            margin-top: 6px; z-index: 1;
         }
 
-        /* Billboard silhouette (before the figure jumps out) */
         .billboard-silhouette {
-            width: 50px;
-            height: 90px;
+            width: 50px; height: 90px;
             margin: 10px auto 0;
             background: rgba(255,255,255,0.15);
             border-radius: 25px 25px 5px 5px;
@@ -149,106 +154,82 @@
             transition: opacity 0.3s;
         }
         .billboard-silhouette .sil-head {
-            width: 28px;
-            height: 28px;
+            width: 28px; height: 28px;
             background: rgba(255,255,255,0.15);
             border-radius: 50%;
             position: absolute;
-            top: -14px;
-            left: 50%;
+            top: -14px; left: 50%;
             transform: translateX(-50%);
         }
-        .billboard-silhouette.gone {
-            opacity: 0;
-        }
+        .billboard-silhouette.gone { opacity: 0; }
 
-        /* Billboard poles */
         .billboard-poles {
-            display: flex;
-            justify-content: center;
-            gap: 60px;
+            display: flex; justify-content: center; gap: 60px;
         }
         .billboard-pole {
-            width: 8px;
-            height: 50px;
+            width: 8px; height: 50px;
             background: linear-gradient(180deg, #666, #444);
             border-radius: 0 0 3px 3px;
         }
 
-        /* ========== JUMP CRACK EFFECT ON BILLBOARD ========== */
         .billboard-crack {
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            z-index: 5;
-            opacity: 0;
+            z-index: 5; opacity: 0;
             pointer-events: none;
         }
-        .billboard-crack.active {
-            opacity: 1;
-        }
+        .billboard-crack.active { opacity: 1; }
         .crack-line {
             position: absolute;
             background: rgba(255,255,255,0.6);
             transform-origin: center;
         }
 
-        /* ========== VIDEO FIGURE (replaces CSS figure) ========== */
+        /* ========== FALLBACK: VIDEO + CSS FIGURE ========== */
         .figure-wrapper {
             position: absolute;
-            left: 50%;
-            top: 18%;
+            left: 50%; top: 18%;
             transform: translateX(-50%) scale(0.4);
             opacity: 0;
             z-index: 15;
             transition: none;
         }
-
         #jump-video {
-            width: 250px;
-            height: auto;
+            width: 250px; height: auto;
             max-height: 50vh;
             border-radius: 8px;
             display: block;
         }
-
-        /* Fallback CSS figure (shown if no video) */
         .figure-body {
             position: relative;
-            width: 160px;
-            height: 280px;
+            width: 160px; height: 280px;
             margin: 0 auto;
         }
         .figure-head {
             width: 80px; height: 80px;
             border-radius: 50%;
             background: linear-gradient(135deg, #f5cba7, #e8b796);
-            margin: 0 auto;
-            position: relative;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-            z-index: 2;
+            margin: 0 auto; position: relative;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3); z-index: 2;
         }
         .figure-hair {
             position: absolute; top: -2px; left: 50%;
             transform: translateX(-50%);
             width: 72px; height: 30px;
-            background: #2c3e50;
-            border-radius: 40px 40px 0 0;
+            background: #2c3e50; border-radius: 40px 40px 0 0;
         }
         .figure-eyes {
             position: absolute; top: 35px; left: 50%;
             transform: translateX(-50%);
-            width: 35px; display: flex;
-            justify-content: space-between;
+            width: 35px; display: flex; justify-content: space-between;
         }
         .figure-eye {
             width: 8px; height: 8px;
-            background: #333; border-radius: 50%;
-            position: relative;
+            background: #333; border-radius: 50%; position: relative;
         }
         .figure-eye::after {
-            content: '';
-            position: absolute;
+            content: ''; position: absolute;
             top: 1px; left: 2px;
             width: 3px; height: 3px;
             background: white; border-radius: 50%;
@@ -264,12 +245,10 @@
             width: 100px; height: 120px;
             background: linear-gradient(180deg, #2c3e50, #1a252f);
             border-radius: 12px 12px 0 0;
-            margin: -5px auto 0;
-            position: relative; z-index: 1;
+            margin: -5px auto 0; position: relative; z-index: 1;
         }
         .figure-torso::before {
-            content: '';
-            position: absolute; top: 0; left: 50%;
+            content: ''; position: absolute; top: 0; left: 50%;
             transform: translateX(-50%);
             width: 20px; height: 0;
             border-left: 10px solid transparent;
@@ -279,337 +258,162 @@
         .figure-tie {
             position: absolute; top: 14px; left: 50%;
             transform: translateX(-50%);
-            width: 12px; height: 50px;
-            background: #c0392b;
+            width: 12px; height: 50px; background: #c0392b;
             clip-path: polygon(50% 0%, 100% 8%, 70% 100%, 50% 90%, 30% 100%, 0% 8%);
         }
-        .figure-legs {
-            display: flex; justify-content: center;
-            gap: 6px; margin-top: -2px;
-        }
-        .figure-leg {
-            width: 28px; height: 90px;
-            background: #1a252f;
-            border-radius: 0 0 8px 8px;
-        }
-        .figure-shoe {
-            width: 34px; height: 14px;
-            background: #111;
-            border-radius: 3px 8px 5px 3px;
-            margin-top: -2px;
-        }
+        .figure-legs { display: flex; justify-content: center; gap: 6px; margin-top: -2px; }
+        .figure-leg { width: 28px; height: 90px; background: #1a252f; border-radius: 0 0 8px 8px; }
+        .figure-shoe { width: 34px; height: 14px; background: #111; border-radius: 3px 8px 5px 3px; margin-top: -2px; }
         .figure-arm {
-            position: absolute;
-            width: 30px; height: 90px;
-            background: #2c3e50;
-            border-radius: 15px;
-            top: 82px; z-index: 0;
+            position: absolute; width: 30px; height: 90px;
+            background: #2c3e50; border-radius: 15px; top: 82px; z-index: 0;
         }
-        .figure-arm.left {
-            left: 8px; transform: rotate(12deg);
-            transform-origin: top center;
-        }
-        .figure-arm.right {
-            right: 8px; transform: rotate(-12deg);
-            transform-origin: top center;
-        }
+        .figure-arm.left { left: 8px; transform: rotate(12deg); transform-origin: top center; }
+        .figure-arm.right { right: 8px; transform: rotate(-12deg); transform-origin: top center; }
         .figure-hand {
-            width: 22px; height: 22px;
-            background: #f5cba7; border-radius: 50%;
-            position: absolute; bottom: -5px; left: 50%;
+            width: 22px; height: 22px; background: #f5cba7;
+            border-radius: 50%; position: absolute; bottom: -5px; left: 50%;
             transform: translateX(-50%);
         }
 
-        /* Jump animation phases */
-        .figure-wrapper.phase-burst {
-            opacity: 1;
-            transform: translateX(-50%) scale(0.5);
-            transition: opacity 0.15s;
-        }
-        .figure-wrapper.phase-jump {
-            opacity: 1;
-            top: 30%;
-            transform: translateX(-50%) scale(0.7) rotate(-5deg);
-            transition: top 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-                        transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-        .figure-wrapper.phase-air {
-            opacity: 1;
-            top: 40%;
-            transform: translateX(-50%) scale(0.85) rotate(3deg);
-            transition: top 0.3s ease-in,
-                        transform 0.3s ease-in;
-        }
-        .figure-wrapper.phase-land {
-            opacity: 1;
-            top: 48%;
-            transform: translateX(-50%) scale(1) rotate(0deg);
-            transition: top 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
-                        transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        .figure-wrapper.phase-settle {
-            opacity: 1;
-            top: 50%;
-            transform: translateX(-50%) scale(1) rotate(0deg);
-            transition: top 0.3s ease-out,
-                        transform 0.3s ease-out;
-        }
-        .figure-wrapper.phase-idle {
-            opacity: 1;
-            top: 50%;
-            transform: translateX(-50%) scale(1);
-            animation: idleFloat 3s ease-in-out infinite;
-        }
+        /* Jump animation phases (for video/CSS fallback) */
+        .figure-wrapper.phase-burst { opacity: 1; transform: translateX(-50%) scale(0.5); transition: opacity 0.15s; }
+        .figure-wrapper.phase-jump { opacity: 1; top: 30%; transform: translateX(-50%) scale(0.7) rotate(-5deg); transition: top 0.4s cubic-bezier(0.22,1,0.36,1), transform 0.4s cubic-bezier(0.22,1,0.36,1); }
+        .figure-wrapper.phase-air { opacity: 1; top: 40%; transform: translateX(-50%) scale(0.85) rotate(3deg); transition: top 0.3s ease-in, transform 0.3s ease-in; }
+        .figure-wrapper.phase-land { opacity: 1; top: 48%; transform: translateX(-50%) scale(1) rotate(0deg); transition: top 0.25s cubic-bezier(0.34,1.56,0.64,1), transform 0.25s cubic-bezier(0.34,1.56,0.64,1); }
+        .figure-wrapper.phase-settle { opacity: 1; top: 50%; transform: translateX(-50%) scale(1) rotate(0deg); transition: top 0.3s ease-out, transform 0.3s ease-out; }
+        .figure-wrapper.phase-idle { opacity: 1; top: 50%; transform: translateX(-50%) scale(1); animation: idleFloat 3s ease-in-out infinite; }
         @keyframes idleFloat {
             0%, 100% { transform: translateX(-50%) scale(1) translateY(0); }
             50% { transform: translateX(-50%) scale(1) translateY(-8px); }
         }
-
-        /* Arm wave (only for CSS fallback figure) */
-        .figure-wrapper.phase-idle .figure-arm.right {
-            animation: waveRight 3s ease-in-out 0.5s infinite;
-        }
-        @keyframes waveRight {
-            0%, 100% { transform: rotate(-12deg); }
-            30% { transform: rotate(-40deg); }
-            60% { transform: rotate(-12deg); }
-        }
+        .figure-wrapper.phase-idle .figure-arm.right { animation: waveRight 3s ease-in-out 0.5s infinite; }
+        @keyframes waveRight { 0%, 100% { transform: rotate(-12deg); } 30% { transform: rotate(-40deg); } 60% { transform: rotate(-12deg); } }
 
         /* ========== LANDING IMPACT ========== */
         .landing-impact {
-            position: absolute;
-            top: 82%;
-            left: 50%;
+            position: absolute; top: 82%; left: 50%;
             transform: translateX(-50%);
-            width: 200px;
-            height: 60px;
-            z-index: 14;
-            opacity: 0;
-            pointer-events: none;
+            width: 200px; height: 60px;
+            z-index: 14; opacity: 0; pointer-events: none;
         }
         .impact-ring {
-            position: absolute;
-            bottom: 0; left: 50%;
+            position: absolute; bottom: 0; left: 50%;
             transform: translateX(-50%) scaleY(0.3);
             width: 0; height: 0;
             border: 3px solid rgba(0,212,255,0.6);
-            border-radius: 50%;
-            opacity: 0;
+            border-radius: 50%; opacity: 0;
         }
-        .impact-ring.animate {
-            animation: impactExpand 0.6s ease-out forwards;
-        }
-        @keyframes impactExpand {
-            0% { width: 20px; height: 20px; opacity: 0.8; }
-            100% { width: 180px; height: 180px; opacity: 0; }
-        }
+        .impact-ring.animate { animation: impactExpand 0.6s ease-out forwards; }
+        @keyframes impactExpand { 0% { width: 20px; height: 20px; opacity: 0.8; } 100% { width: 180px; height: 180px; opacity: 0; } }
         .dust-particle {
-            position: absolute;
-            bottom: 10px;
+            position: absolute; bottom: 10px;
             width: 6px; height: 6px;
             background: rgba(255,255,255,0.5);
-            border-radius: 50%;
-            opacity: 0;
+            border-radius: 50%; opacity: 0;
         }
-        .dust-particle.animate {
-            animation: dustBurst 0.5s ease-out forwards;
-        }
-        @keyframes dustBurst {
-            0% { transform: translate(0, 0) scale(1); opacity: 0.7; }
-            100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
-        }
+        .dust-particle.animate { animation: dustBurst 0.5s ease-out forwards; }
+        @keyframes dustBurst { 0% { transform: translate(0,0) scale(1); opacity: 0.7; } 100% { transform: translate(var(--dx),var(--dy)) scale(0); opacity: 0; } }
 
-        /* Ground glow */
         .ground-glow {
-            position: absolute;
-            top: 82%;
-            left: 50%;
+            position: absolute; top: 82%; left: 50%;
             transform: translateX(-50%);
             width: 160px; height: 30px;
             background: radial-gradient(ellipse, rgba(0,212,255,0.4), transparent 70%);
-            border-radius: 50%;
-            z-index: 13;
-            opacity: 0;
-            transition: opacity 0.5s;
+            border-radius: 50%; z-index: 13; opacity: 0; transition: opacity 0.5s;
         }
-        .ground-glow.visible {
-            opacity: 1;
-            animation: pulsateGlow 2s ease-in-out infinite;
-        }
-        @keyframes pulsateGlow {
-            0%, 100% { transform: translateX(-50%) scaleX(1); opacity: 0.6; }
-            50% { transform: translateX(-50%) scaleX(1.2); opacity: 0.3; }
-        }
+        .ground-glow.visible { opacity: 1; animation: pulsateGlow 2s ease-in-out infinite; }
+        @keyframes pulsateGlow { 0%, 100% { transform: translateX(-50%) scaleX(1); opacity: 0.6; } 50% { transform: translateX(-50%) scaleX(1.2); opacity: 0.3; } }
 
         /* ========== SPEECH BUBBLE ========== */
         .speech-bubble {
-            position: absolute;
-            top: 38%;
-            left: 50%;
+            position: absolute; top: 38%; left: 50%;
             transform: translateX(-50%) translateY(-100%);
-            background: white;
-            color: #333;
-            padding: 14px 18px;
-            border-radius: 16px;
-            font-size: 15px;
-            font-weight: 500;
-            line-height: 1.5;
-            max-width: 260px;
-            text-align: center;
+            background: white; color: #333;
+            padding: 14px 18px; border-radius: 16px;
+            font-size: 15px; font-weight: 500; line-height: 1.5;
+            max-width: 260px; text-align: center;
             box-shadow: 0 8px 30px rgba(0,0,0,0.25);
-            z-index: 16;
-            opacity: 0;
-            pointer-events: none;
+            z-index: 16; opacity: 0; pointer-events: none;
             transition: opacity 0.5s, transform 0.5s;
             direction: rtl;
         }
         .speech-bubble::after {
-            content: '';
-            position: absolute;
+            content: ''; position: absolute;
             bottom: -10px; left: 50%;
             transform: translateX(-50%);
             border-left: 10px solid transparent;
             border-right: 10px solid transparent;
             border-top: 12px solid white;
         }
-        .speech-bubble.visible {
-            opacity: 1;
-            transform: translateX(-50%) translateY(-110%);
-        }
+        .speech-bubble.visible { opacity: 1; transform: translateX(-50%) translateY(-110%); }
 
-        /* Name badge */
         .name-badge {
-            position: absolute;
-            top: 85%;
-            left: 50%;
+            position: absolute; top: 85%; left: 50%;
             transform: translateX(-50%);
             background: linear-gradient(135deg, #cc0000, #a00000);
-            color: white;
-            padding: 6px 20px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: bold;
-            z-index: 16;
+            color: white; padding: 6px 20px; border-radius: 20px;
+            font-size: 14px; font-weight: bold; z-index: 16;
             box-shadow: 0 4px 15px rgba(200,0,0,0.3);
-            opacity: 0;
-            transition: opacity 0.5s;
-            white-space: nowrap;
+            opacity: 0; transition: opacity 0.5s; white-space: nowrap;
         }
         .name-badge.visible { opacity: 1; }
 
-        /* CTA at bottom */
+        /* CTA */
         .cta-bar {
-            position: fixed;
-            bottom: 0; left: 0;
-            width: 100%;
+            position: fixed; bottom: 0; left: 0; width: 100%;
             padding: 15px 20px 25px;
             background: linear-gradient(transparent, rgba(0,0,0,0.7));
-            z-index: 20;
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            opacity: 0;
-            transform: translateY(30px);
-            transition: all 0.6s ease;
-            pointer-events: none;
+            z-index: 20; display: flex; justify-content: center; gap: 10px;
+            opacity: 0; transform: translateY(30px);
+            transition: all 0.6s ease; pointer-events: none;
         }
-        .cta-bar.visible {
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: auto;
-        }
-        .cta-btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 25px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            font-family: inherit;
-        }
-        .cta-primary {
-            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
-            color: white;
-        }
-        .cta-secondary {
-            background: rgba(255,255,255,0.2);
-            color: white;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.3);
-        }
+        .cta-bar.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        .cta-btn { padding: 12px 24px; border: none; border-radius: 25px; font-size: 14px; font-weight: bold; cursor: pointer; font-family: inherit; }
+        .cta-primary { background: linear-gradient(135deg, #00d4ff, #7b2ff7); color: white; }
+        .cta-secondary { background: rgba(255,255,255,0.2); color: white; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); }
 
-        /* Top badge */
         .top-badge {
-            position: fixed;
-            top: 15px; left: 50%;
+            position: fixed; top: 15px; left: 50%;
             transform: translateX(-50%);
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(10px);
-            color: white;
-            padding: 6px 16px;
-            border-radius: 15px;
-            font-size: 12px;
-            z-index: 20;
-            opacity: 0;
-            transition: opacity 0.5s;
-            white-space: nowrap;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(10px);
+            color: white; padding: 6px 16px; border-radius: 15px;
+            font-size: 12px; z-index: 20; opacity: 0;
+            transition: opacity 0.5s; white-space: nowrap;
         }
         .top-badge.visible { opacity: 1; }
 
-        /* Loading */
         .loading-camera {
-            position: fixed;
-            top: 50%; left: 50%;
+            position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            color: white; z-index: 50;
-            text-align: center;
+            color: white; z-index: 50; text-align: center;
         }
         .loading-camera .spinner {
             width: 40px; height: 40px;
             border: 3px solid rgba(255,255,255,0.2);
-            border-top-color: #00d4ff;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto 10px;
+            border-top-color: #00d4ff; border-radius: 50%;
+            animation: spin 0.8s linear infinite; margin: 0 auto 10px;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Error */
         .error-msg {
-            position: fixed;
-            top: 50%; left: 50%;
+            position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8);
-            color: white; padding: 30px;
-            border-radius: 16px;
-            text-align: center;
-            z-index: 200;
-            max-width: 300px;
-            display: none;
+            background: rgba(0,0,0,0.8); color: white; padding: 30px;
+            border-radius: 16px; text-align: center; z-index: 200;
+            max-width: 300px; display: none;
         }
 
-        /* Screen flash on jump */
         .screen-flash {
-            position: fixed;
-            top: 0; left: 0;
+            position: fixed; top: 0; left: 0;
             width: 100%; height: 100%;
-            background: white;
-            z-index: 12;
-            opacity: 0;
-            pointer-events: none;
+            background: white; z-index: 12;
+            opacity: 0; pointer-events: none;
         }
-        .screen-flash.flash {
-            animation: flashBang 0.4s ease-out;
-        }
-        @keyframes flashBang {
-            0% { opacity: 0.6; }
-            100% { opacity: 0; }
-        }
+        .screen-flash.flash { animation: flashBang 0.4s ease-out; }
+        @keyframes flashBang { 0% { opacity: 0.6; } 100% { opacity: 0; } }
 
-        /* Billboard shake */
-        .billboard.shake {
-            animation: billboardShake 0.4s ease-out;
-        }
+        .billboard.shake { animation: billboardShake 0.4s ease-out; }
         @keyframes billboardShake {
             0%, 100% { transform: translateX(-50%) rotate(0); }
             20% { transform: translateX(-50%) rotate(-2deg); }
@@ -618,21 +422,14 @@
             80% { transform: translateX(-50%) rotate(0.5deg); }
         }
 
-        /* Sparkles */
         .sparkles {
-            position: absolute;
-            top: 40%; left: 30%;
+            position: absolute; top: 40%; left: 30%;
             width: 40%; height: 40%;
-            pointer-events: none;
-            z-index: 14;
-            opacity: 0;
-            transition: opacity 0.5s;
+            pointer-events: none; z-index: 14;
+            opacity: 0; transition: opacity 0.5s;
         }
         .sparkles.visible { opacity: 1; }
-        .sparkle {
-            position: absolute;
-            border-radius: 50%;
-        }
+        .sparkle { position: absolute; border-radius: 50%; }
         @keyframes sparkleFloat {
             0%, 100% { transform: translateY(0) scale(1); opacity: 0.6; }
             25% { transform: translateY(-15px) scale(1.3); opacity: 0.3; }
@@ -640,26 +437,25 @@
             75% { transform: translateY(-10px) scale(1.1); opacity: 0.4; }
         }
 
-        /* Video loading indicator */
-        .video-loading-msg {
-            position: fixed;
-            bottom: 80px;
-            left: 50%;
+        /* Mode indicator */
+        .mode-badge {
+            position: fixed; top: 40px; left: 50%;
             transform: translateX(-50%);
-            background: rgba(0,0,0,0.7);
-            color: #00d4ff;
-            padding: 8px 16px;
-            border-radius: 10px;
-            font-size: 12px;
-            z-index: 25;
-            display: none;
+            background: rgba(0,212,255,0.2);
+            color: #00d4ff; padding: 4px 12px;
+            border-radius: 10px; font-size: 10px;
+            z-index: 21; opacity: 0; transition: opacity 0.5s;
         }
+        .mode-badge.visible { opacity: 1; }
     </style>
 </head>
 <body>
 
     <!-- Camera feed -->
     <video id="camera" autoplay playsinline muted></video>
+
+    <!-- Three.js canvas (for 3D model) -->
+    <canvas id="three-canvas"></canvas>
 
     <!-- Intro overlay -->
     <div id="intro-overlay">
@@ -668,19 +464,20 @@
         <button class="start-btn" onclick="startExperience()">Start Camera</button>
     </div>
 
-    <!-- Loading state -->
+    <!-- Loading -->
     <div class="loading-camera" id="loading" style="display:none;">
         <div class="spinner"></div>
         <div style="font-size:14px;">Starting camera...</div>
     </div>
 
-    <!-- Screen flash effect -->
+    <!-- Screen flash -->
     <div class="screen-flash" id="screenFlash"></div>
 
     <!-- Top badge -->
     <div class="top-badge" id="topBadge">AR Billboard Experience</div>
+    <div class="mode-badge" id="modeBadge"></div>
 
-    <!-- AR Content Layer -->
+    <!-- AR Content Layer (2D overlays) -->
     <div id="ar-layer">
 
         <!-- Billboard -->
@@ -701,21 +498,9 @@
             </div>
         </div>
 
-        <!-- The jumping figure (video OR CSS fallback) -->
+        <!-- Fallback: Video + CSS figure (hidden when 3D mode) -->
         <div class="figure-wrapper" id="figureWrapper">
-            <!--
-                VIDEO MODE: Place your video file as "jump-video.mp4" in the same folder.
-                The video will play automatically during the jump animation.
-                If the video fails to load, the CSS figure is shown as fallback.
-            -->
-            <video id="jump-video"
-                   playsinline muted
-                   preload="auto"
-                   style="display:none;">
-                <!-- Sources are added dynamically to avoid 404 errors -->
-            </video>
-
-            <!-- CSS fallback figure (hidden when video loads) -->
+            <video id="jump-video" playsinline muted preload="auto" style="display:none;"></video>
             <div class="figure-body" id="cssFigure">
                 <div class="figure-head">
                     <div class="figure-hair"></div>
@@ -725,9 +510,7 @@
                     </div>
                     <div class="figure-smile"></div>
                 </div>
-                <div class="figure-torso">
-                    <div class="figure-tie"></div>
-                </div>
+                <div class="figure-torso"><div class="figure-tie"></div></div>
                 <div class="figure-arm left"><div class="figure-hand"></div></div>
                 <div class="figure-arm right"><div class="figure-hand"></div></div>
                 <div class="figure-legs">
@@ -737,13 +520,11 @@
             </div>
         </div>
 
-        <!-- Landing impact effects -->
+        <!-- Landing impact -->
         <div class="landing-impact" id="landingImpact">
             <div class="impact-ring" id="impactRing1"></div>
             <div class="impact-ring" id="impactRing2"></div>
         </div>
-
-        <!-- Ground glow -->
         <div class="ground-glow" id="groundGlow"></div>
 
         <!-- Speech bubble -->
@@ -758,16 +539,13 @@
         <div class="sparkles" id="sparkles"></div>
     </div>
 
-    <!-- CTA buttons -->
+    <!-- CTA -->
     <div class="cta-bar" id="ctaBar">
         <button class="cta-btn cta-primary" onclick="replayJump()">Replay Jump</button>
         <button class="cta-btn cta-secondary" onclick="shareExperience()">Share</button>
     </div>
 
-    <!-- Video loading message -->
-    <div class="video-loading-msg" id="videoLoadingMsg">Loading video...</div>
-
-    <!-- Error message -->
+    <!-- Error -->
     <div class="error-msg" id="errorMsg">
         <p style="font-size:18px; margin-bottom:10px;">Camera Error</p>
         <p>Could not access your camera.</p>
@@ -776,18 +554,194 @@
     </div>
 
     <script>
+        // ========== RENDER MODE ==========
+        // Priority: 3D model (.glb) > Video (.mp4/.webm) > CSS figure
+        let renderMode = 'css'; // 'three', 'video', or 'css'
+
+        // ========== THREE.JS SETUP ==========
+        let scene, camera3d, renderer, model3d, mixer, clock;
+        let threeReady = false;
+        // 3D jump animation state
+        let threeJumpPhase = null; // null, 'burst', 'jump', 'air', 'land', 'settle', 'idle'
+        let threeJumpStart = 0;
+
+        // Y positions for 3D jump (in Three.js world units)
+        const POS_BILLBOARD = 2.5;   // starting inside billboard (top)
+        const POS_JUMP_PEAK = 1.5;   // peak of jump
+        const POS_LAND = -0.8;       // landing position
+        const POS_IDLE = -0.8;       // idle position
+
+        function initThreeJS() {
+            const canvas = document.getElementById('three-canvas');
+            renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
+
+            scene = new THREE.Scene();
+
+            camera3d = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera3d.position.set(0, 0.5, 5);
+            camera3d.lookAt(0, 0, 0);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            dirLight.position.set(2, 4, 3);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
+
+            const fillLight = new THREE.DirectionalLight(0x88ccff, 0.4);
+            fillLight.position.set(-2, 1, -1);
+            scene.add(fillLight);
+
+            const rimLight = new THREE.DirectionalLight(0x00d4ff, 0.3);
+            rimLight.position.set(0, 2, -3);
+            scene.add(rimLight);
+
+            clock = new THREE.Clock();
+
+            window.addEventListener('resize', () => {
+                camera3d.aspect = window.innerWidth / window.innerHeight;
+                camera3d.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        async function tryLoad3DModel() {
+            try {
+                const resp = await fetch('character.glb', { method: 'HEAD' });
+                if (!resp.ok) return false;
+
+                initThreeJS();
+
+                return new Promise((resolve) => {
+                    const loader = new THREE.GLTFLoader();
+                    loader.load('character.glb',
+                        (gltf) => {
+                            model3d = gltf.scene;
+
+                            // Auto-scale model to reasonable size
+                            const box = new THREE.Box3().setFromObject(model3d);
+                            const size = box.getSize(new THREE.Vector3());
+                            const maxDim = Math.max(size.x, size.y, size.z);
+                            const scale = 2.5 / maxDim;
+                            model3d.scale.setScalar(scale);
+
+                            // Center model
+                            const center = box.getCenter(new THREE.Vector3());
+                            model3d.position.x = -center.x * scale;
+                            model3d.position.z = -center.z * scale;
+
+                            // Start hidden above (in billboard)
+                            model3d.position.y = POS_BILLBOARD;
+                            model3d.visible = false;
+
+                            scene.add(model3d);
+
+                            // Setup animation if the model has one
+                            if (gltf.animations && gltf.animations.length > 0) {
+                                mixer = new THREE.AnimationMixer(model3d);
+                                const action = mixer.clipAction(gltf.animations[0]);
+                                action.play();
+                            }
+
+                            threeReady = true;
+                            renderMode = 'three';
+                            // Hide the 2D fallback
+                            document.getElementById('figureWrapper').style.display = 'none';
+                            console.log('3D model loaded — using Three.js mode');
+                            resolve(true);
+                        },
+                        undefined,
+                        (err) => {
+                            console.log('3D model load error:', err);
+                            resolve(false);
+                        }
+                    );
+                });
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function animateThree() {
+            if (!threeReady) return;
+            requestAnimationFrame(animateThree);
+
+            const delta = clock.getDelta();
+            if (mixer) mixer.update(delta);
+
+            // Animate 3D model based on jump phase
+            if (model3d && threeJumpPhase) {
+                const elapsed = (performance.now() - threeJumpStart) / 1000;
+
+                switch (threeJumpPhase) {
+                    case 'burst':
+                        model3d.visible = true;
+                        model3d.position.y = POS_BILLBOARD;
+                        model3d.scale.setScalar(0.5);
+                        model3d.rotation.z = 0;
+                        break;
+
+                    case 'jump': {
+                        const t = Math.min(elapsed / 0.4, 1);
+                        const ease = 1 - Math.pow(1 - t, 3);
+                        model3d.position.y = POS_BILLBOARD + (POS_JUMP_PEAK - POS_BILLBOARD) * ease;
+                        model3d.scale.setScalar(0.5 + 0.8 * ease);
+                        model3d.rotation.z = -0.1 * (1 - t);
+                        break;
+                    }
+
+                    case 'air': {
+                        const t = Math.min(elapsed / 0.3, 1);
+                        model3d.position.y = POS_JUMP_PEAK + (POS_LAND + 0.3 - POS_JUMP_PEAK) * t * t;
+                        model3d.scale.setScalar(1.3 + 0.2 * t);
+                        model3d.rotation.z = 0.05 * Math.sin(t * Math.PI);
+                        break;
+                    }
+
+                    case 'land': {
+                        const t = Math.min(elapsed / 0.25, 1);
+                        const bounce = 1 + 0.15 * Math.sin(t * Math.PI);
+                        model3d.position.y = POS_LAND;
+                        model3d.scale.setScalar(1.5 * bounce);
+                        model3d.rotation.z = 0;
+                        break;
+                    }
+
+                    case 'settle':
+                        model3d.position.y = POS_IDLE;
+                        model3d.scale.setScalar(1.5);
+                        model3d.rotation.z = 0;
+                        break;
+
+                    case 'idle': {
+                        // Gentle floating
+                        const time = performance.now() / 1000;
+                        model3d.position.y = POS_IDLE + Math.sin(time * 1.5) * 0.05;
+                        model3d.rotation.y += delta * 0.3;
+                        break;
+                    }
+                }
+            }
+
+            renderer.render(scene, camera3d);
+        }
+
         // ========== VIDEO SETUP ==========
         const jumpVideo = document.getElementById('jump-video');
         const cssFigure = document.getElementById('cssFigure');
-        let useVideo = false;
 
-        // Check if video file exists before loading (avoids 404 errors)
         async function tryLoadVideo() {
             const formats = [
                 { file: 'jump-video.mp4', type: 'video/mp4' },
                 { file: 'jump-video.webm', type: 'video/webm' }
             ];
-
             for (const fmt of formats) {
                 try {
                     const resp = await fetch(fmt.file, { method: 'HEAD' });
@@ -797,28 +751,37 @@
                         source.type = fmt.type;
                         jumpVideo.appendChild(source);
                         jumpVideo.load();
-
                         await new Promise((resolve, reject) => {
                             jumpVideo.addEventListener('canplaythrough', resolve, { once: true });
                             jumpVideo.addEventListener('error', reject, { once: true });
                         });
-
-                        useVideo = true;
+                        renderMode = 'video';
                         jumpVideo.style.display = 'block';
                         cssFigure.style.display = 'none';
                         console.log('Video loaded — using video mode (' + fmt.file + ')');
-                        return;
+                        return true;
                     }
-                } catch (e) {
-                    // This format not available, try next
-                }
+                } catch (e) {}
             }
-            // No video found — CSS figure will be used
-            console.log('No video found — using CSS figure fallback');
+            return false;
         }
-        tryLoadVideo();
 
-        // ========== SPARKLE PARTICLES ==========
+        // ========== LOAD ASSETS (priority: 3D > Video > CSS) ==========
+        async function loadAssets() {
+            const has3D = await tryLoad3DModel();
+            if (has3D) {
+                animateThree();
+                return;
+            }
+            const hasVideo = await tryLoadVideo();
+            if (!hasVideo) {
+                renderMode = 'css';
+                console.log('No 3D model or video — using CSS figure fallback');
+            }
+        }
+        loadAssets();
+
+        // ========== SPARKLES ==========
         function createSparkles() {
             const container = document.getElementById('sparkles');
             const colors = ['#00d4ff', '#7b2ff7', '#ffd93d', '#ff6b6b', '#2ecc71'];
@@ -826,16 +789,11 @@
                 const sparkle = document.createElement('div');
                 sparkle.className = 'sparkle';
                 const size = 4 + Math.random() * 8;
-                const x = Math.random() * 100;
-                const y = Math.random() * 100;
-                const color = colors[Math.floor(Math.random() * colors.length)];
-                const delay = Math.random() * 3;
-                const dur = 2 + Math.random() * 3;
                 sparkle.style.cssText = `
                     width: ${size}px; height: ${size}px;
-                    background: ${color};
-                    left: ${x}%; top: ${y}%;
-                    animation: sparkleFloat ${dur}s ease-in-out ${delay}s infinite;
+                    background: ${colors[Math.floor(Math.random() * colors.length)]};
+                    left: ${Math.random() * 100}%; top: ${Math.random() * 100}%;
+                    animation: sparkleFloat ${2 + Math.random() * 3}s ease-in-out ${Math.random() * 3}s infinite;
                     opacity: 0.6;
                 `;
                 container.appendChild(sparkle);
@@ -843,7 +801,7 @@
         }
         createSparkles();
 
-        // ========== DUST PARTICLES ==========
+        // ========== DUST + CRACKS ==========
         function createDustParticles() {
             const impact = document.getElementById('landingImpact');
             for (let i = 0; i < 12; i++) {
@@ -859,38 +817,31 @@
         }
         createDustParticles();
 
-        // ========== CRACK LINES ==========
         function createCrackLines() {
             const crack = document.getElementById('billboardCrack');
-            const lines = [
+            [
                 { top: '40%', left: '50%', width: '60px', angle: -30 },
                 { top: '50%', left: '45%', width: '45px', angle: 20 },
                 { top: '35%', left: '55%', width: '50px', angle: -60 },
                 { top: '55%', left: '40%', width: '35px', angle: 45 },
                 { top: '45%', left: '60%', width: '40px', angle: -15 },
-            ];
-            lines.forEach(l => {
+            ].forEach(l => {
                 const div = document.createElement('div');
                 div.className = 'crack-line';
-                div.style.cssText = `
-                    top: ${l.top}; left: ${l.left};
-                    width: ${l.width}; height: 2px;
-                    transform: rotate(${l.angle}deg);
-                `;
+                div.style.cssText = `top:${l.top};left:${l.left};width:${l.width};height:2px;transform:rotate(${l.angle}deg);`;
                 crack.appendChild(div);
             });
         }
         createCrackLines();
 
-        // ========== SPEECH ROTATION ==========
+        // ========== SPEECH ==========
         const speeches = [
             'Hey there! I just jumped off that billboard!',
             'Pretty cool entrance, right?',
             'The future is augmented!',
             'Thanks for watching!'
         ];
-        let speechIndex = 0;
-        let speechInterval;
+        let speechIndex = 0, speechInterval;
 
         function rotateSpeech() {
             const bubble = document.getElementById('speechBubble');
@@ -902,7 +853,7 @@
             }, 400);
         }
 
-        // ========== JUMP ANIMATION SEQUENCE ==========
+        // ========== JUMP SEQUENCE ==========
         function runJumpSequence() {
             const figure = document.getElementById('figureWrapper');
             const billboard = document.getElementById('billboard');
@@ -917,9 +868,12 @@
             const sparkles = document.getElementById('sparkles');
             const ctaBar = document.getElementById('ctaBar');
             const dustParticles = document.querySelectorAll('.dust-particle');
+            const modeBadge = document.getElementById('modeBadge');
 
-            // Reset everything
-            figure.className = 'figure-wrapper';
+            // Reset 2D elements
+            if (renderMode !== 'three') {
+                figure.className = 'figure-wrapper';
+            }
             billboard.classList.remove('shake');
             silhouette.classList.remove('gone');
             crack.classList.remove('active');
@@ -931,49 +885,74 @@
             impactRing1.classList.remove('animate');
             impactRing2.classList.remove('animate');
             dustParticles.forEach(p => p.classList.remove('animate'));
-
             if (speechInterval) clearInterval(speechInterval);
 
-            // Reset video to beginning
-            if (useVideo) {
+            // Reset based on mode
+            if (renderMode === 'three' && model3d) {
+                model3d.visible = false;
+                model3d.position.y = POS_BILLBOARD;
+                threeJumpPhase = null;
+            } else if (renderMode === 'video') {
                 jumpVideo.currentTime = 0;
                 jumpVideo.pause();
             }
 
+            // Show mode badge
+            modeBadge.textContent = renderMode === 'three' ? '3D Model' : renderMode === 'video' ? 'Video' : 'CSS';
+            modeBadge.classList.add('visible');
+            setTimeout(() => modeBadge.classList.remove('visible'), 3000);
+
             // === TIMELINE ===
 
-            // 1000ms - Billboard shakes, cracks appear
+            // 1000ms - Shake billboard
             setTimeout(() => {
                 billboard.classList.add('shake');
                 crack.classList.add('active');
             }, 1000);
 
-            // 1400ms - Flash! Figure bursts out, video starts playing
+            // 1400ms - Flash + burst out
             setTimeout(() => {
                 flash.classList.add('flash');
                 silhouette.classList.add('gone');
-                figure.classList.add('phase-burst');
-
-                if (useVideo) {
-                    jumpVideo.play().catch(() => {});
-                }
-
                 setTimeout(() => flash.classList.remove('flash'), 500);
+
+                if (renderMode === 'three') {
+                    threeJumpPhase = 'burst';
+                    threeJumpStart = performance.now();
+                } else {
+                    figure.classList.add('phase-burst');
+                    if (renderMode === 'video') jumpVideo.play().catch(() => {});
+                }
             }, 1400);
 
-            // 1600ms - Jump upward
+            // 1600ms - Jump up
             setTimeout(() => {
-                figure.className = 'figure-wrapper phase-jump';
+                if (renderMode === 'three') {
+                    threeJumpPhase = 'jump';
+                    threeJumpStart = performance.now();
+                } else {
+                    figure.className = 'figure-wrapper phase-jump';
+                }
             }, 1600);
 
             // 2000ms - In the air
             setTimeout(() => {
-                figure.className = 'figure-wrapper phase-air';
+                if (renderMode === 'three') {
+                    threeJumpPhase = 'air';
+                    threeJumpStart = performance.now();
+                } else {
+                    figure.className = 'figure-wrapper phase-air';
+                }
             }, 2000);
 
-            // 2300ms - Landing
+            // 2300ms - Land
             setTimeout(() => {
-                figure.className = 'figure-wrapper phase-land';
+                if (renderMode === 'three') {
+                    threeJumpPhase = 'land';
+                    threeJumpStart = performance.now();
+                } else {
+                    figure.className = 'figure-wrapper phase-land';
+                }
                 impactRing1.classList.add('animate');
                 setTimeout(() => impactRing2.classList.add('animate'), 100);
                 dustParticles.forEach(p => p.classList.add('animate'));
@@ -982,37 +961,35 @@
 
             // 2600ms - Settle
             setTimeout(() => {
-                figure.className = 'figure-wrapper phase-settle';
+                if (renderMode === 'three') {
+                    threeJumpPhase = 'settle';
+                    threeJumpStart = performance.now();
+                } else {
+                    figure.className = 'figure-wrapper phase-settle';
+                }
             }, 2600);
 
             // 3000ms - Idle
             setTimeout(() => {
-                figure.className = 'figure-wrapper phase-idle';
+                if (renderMode === 'three') {
+                    threeJumpPhase = 'idle';
+                } else {
+                    figure.className = 'figure-wrapper phase-idle';
+                }
                 sparkles.classList.add('visible');
             }, 3000);
 
-            // 3300ms - Speech bubble
-            setTimeout(() => {
-                speechBubble.classList.add('visible');
-            }, 3300);
-
-            // 3600ms - Name badge
-            setTimeout(() => {
-                nameBadge.classList.add('visible');
-            }, 3600);
-
-            // 4000ms - CTA bar
-            setTimeout(() => {
-                ctaBar.classList.add('visible');
-            }, 4000);
-
-            // 5000ms - Speech rotation
-            setTimeout(() => {
-                speechInterval = setInterval(rotateSpeech, 4000);
-            }, 5000);
+            // 3300ms - Speech
+            setTimeout(() => { speechBubble.classList.add('visible'); }, 3300);
+            // 3600ms - Name
+            setTimeout(() => { nameBadge.classList.add('visible'); }, 3600);
+            // 4000ms - CTA
+            setTimeout(() => { ctaBar.classList.add('visible'); }, 4000);
+            // 5000ms - Rotate speech
+            setTimeout(() => { speechInterval = setInterval(rotateSpeech, 4000); }, 5000);
         }
 
-        // ========== START EXPERIENCE ==========
+        // ========== START ==========
         async function startExperience() {
             const intro = document.getElementById('intro-overlay');
             const loading = document.getElementById('loading');
@@ -1030,7 +1007,6 @@
                     },
                     audio: false
                 });
-
                 video.srcObject = stream;
                 await video.play();
 
@@ -1042,17 +1018,9 @@
 
                 loading.style.display = 'none';
 
-                setTimeout(() => {
-                    document.getElementById('topBadge').classList.add('visible');
-                }, 300);
-
-                setTimeout(() => {
-                    document.getElementById('billboard').classList.add('visible');
-                }, 600);
-
-                setTimeout(() => {
-                    runJumpSequence();
-                }, 1200);
+                setTimeout(() => document.getElementById('topBadge').classList.add('visible'), 300);
+                setTimeout(() => document.getElementById('billboard').classList.add('visible'), 600);
+                setTimeout(() => runJumpSequence(), 1200);
 
             } catch (err) {
                 loading.style.display = 'none';
@@ -1061,17 +1029,13 @@
             }
         }
 
-        // ========== REPLAY ==========
-        function replayJump() {
-            runJumpSequence();
-        }
+        function replayJump() { runJumpSequence(); }
 
-        // ========== SHARE ==========
         function shareExperience() {
             if (navigator.share) {
                 navigator.share({
                     title: 'AR Billboard Experience',
-                    text: 'Check out this AR experience - a figure jumps out of a billboard!',
+                    text: 'Check out this AR experience!',
                     url: window.location.href
                 });
             } else {
