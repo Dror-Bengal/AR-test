@@ -193,11 +193,10 @@
             transform-origin: center;
         }
 
-        /* ========== FIGURE (the jumping human) ========== */
+        /* ========== VIDEO FIGURE (replaces CSS figure) ========== */
         .figure-wrapper {
             position: absolute;
             left: 50%;
-            /* Starts inside the billboard */
             top: 18%;
             transform: translateX(-50%) scale(0.4);
             opacity: 0;
@@ -205,58 +204,15 @@
             transition: none;
         }
 
-        /* Jump animation phases */
-        .figure-wrapper.phase-burst {
-            opacity: 1;
-            transform: translateX(-50%) scale(0.5);
-            transition: opacity 0.15s;
+        #jump-video {
+            width: 250px;
+            height: auto;
+            max-height: 50vh;
+            border-radius: 8px;
+            display: block;
         }
 
-        .figure-wrapper.phase-jump {
-            opacity: 1;
-            top: 35%;
-            transform: translateX(-50%) scale(0.8) rotate(-5deg);
-            transition: top 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-                        transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        .figure-wrapper.phase-air {
-            opacity: 1;
-            top: 45%;
-            transform: translateX(-50%) scale(0.9) rotate(3deg);
-            transition: top 0.3s ease-in,
-                        transform 0.3s ease-in;
-        }
-
-        .figure-wrapper.phase-land {
-            opacity: 1;
-            top: 52%;
-            transform: translateX(-50%) scale(1) rotate(0deg);
-            transition: top 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
-                        transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        .figure-wrapper.phase-settle {
-            opacity: 1;
-            top: 55%;
-            transform: translateX(-50%) scale(1) rotate(0deg);
-            transition: top 0.3s ease-out,
-                        transform 0.3s ease-out;
-        }
-
-        /* Idle floating after landing */
-        .figure-wrapper.phase-idle {
-            opacity: 1;
-            top: 55%;
-            transform: translateX(-50%) scale(1);
-            animation: idleFloat 3s ease-in-out infinite;
-        }
-        @keyframes idleFloat {
-            0%, 100% { transform: translateX(-50%) scale(1) translateY(0); }
-            50% { transform: translateX(-50%) scale(1) translateY(-8px); }
-        }
-
-        /* Figure body (same design, slightly bigger) */
+        /* Fallback CSS figure (shown if no video) */
         .figure-body {
             position: relative;
             width: 160px;
@@ -264,8 +220,7 @@
             margin: 0 auto;
         }
         .figure-head {
-            width: 80px;
-            height: 80px;
+            width: 80px; height: 80px;
             border-radius: 50%;
             background: linear-gradient(135deg, #f5cba7, #e8b796);
             margin: 0 auto;
@@ -274,29 +229,21 @@
             z-index: 2;
         }
         .figure-hair {
-            position: absolute;
-            top: -2px;
-            left: 50%;
+            position: absolute; top: -2px; left: 50%;
             transform: translateX(-50%);
-            width: 72px;
-            height: 30px;
+            width: 72px; height: 30px;
             background: #2c3e50;
             border-radius: 40px 40px 0 0;
         }
         .figure-eyes {
-            position: absolute;
-            top: 35px;
-            left: 50%;
+            position: absolute; top: 35px; left: 50%;
             transform: translateX(-50%);
-            width: 35px;
-            display: flex;
+            width: 35px; display: flex;
             justify-content: space-between;
         }
         .figure-eye {
-            width: 8px;
-            height: 8px;
-            background: #333;
-            border-radius: 50%;
+            width: 8px; height: 8px;
+            background: #333; border-radius: 50%;
             position: relative;
         }
         .figure-eye::after {
@@ -304,100 +251,121 @@
             position: absolute;
             top: 1px; left: 2px;
             width: 3px; height: 3px;
-            background: white;
-            border-radius: 50%;
+            background: white; border-radius: 50%;
         }
         .figure-smile {
-            position: absolute;
-            bottom: 18px;
-            left: 50%;
+            position: absolute; bottom: 18px; left: 50%;
             transform: translateX(-50%);
-            width: 18px;
-            height: 8px;
+            width: 18px; height: 8px;
             border-bottom: 3px solid #c0392b;
             border-radius: 0 0 15px 15px;
         }
         .figure-torso {
-            width: 100px;
-            height: 120px;
+            width: 100px; height: 120px;
             background: linear-gradient(180deg, #2c3e50, #1a252f);
             border-radius: 12px 12px 0 0;
             margin: -5px auto 0;
-            position: relative;
-            z-index: 1;
+            position: relative; z-index: 1;
         }
         .figure-torso::before {
             content: '';
-            position: absolute;
-            top: 0;
-            left: 50%;
+            position: absolute; top: 0; left: 50%;
             transform: translateX(-50%);
-            width: 20px;
-            height: 0;
+            width: 20px; height: 0;
             border-left: 10px solid transparent;
             border-right: 10px solid transparent;
             border-top: 15px solid white;
         }
         .figure-tie {
-            position: absolute;
-            top: 14px;
-            left: 50%;
+            position: absolute; top: 14px; left: 50%;
             transform: translateX(-50%);
-            width: 12px;
-            height: 50px;
+            width: 12px; height: 50px;
             background: #c0392b;
             clip-path: polygon(50% 0%, 100% 8%, 70% 100%, 50% 90%, 30% 100%, 0% 8%);
         }
         .figure-legs {
-            display: flex;
-            justify-content: center;
-            gap: 6px;
-            margin-top: -2px;
+            display: flex; justify-content: center;
+            gap: 6px; margin-top: -2px;
         }
         .figure-leg {
-            width: 28px;
-            height: 90px;
+            width: 28px; height: 90px;
             background: #1a252f;
             border-radius: 0 0 8px 8px;
         }
         .figure-shoe {
-            width: 34px;
-            height: 14px;
+            width: 34px; height: 14px;
             background: #111;
             border-radius: 3px 8px 5px 3px;
             margin-top: -2px;
         }
         .figure-arm {
             position: absolute;
-            width: 30px;
-            height: 90px;
+            width: 30px; height: 90px;
             background: #2c3e50;
             border-radius: 15px;
-            top: 82px;
-            z-index: 0;
+            top: 82px; z-index: 0;
         }
         .figure-arm.left {
-            left: 8px;
-            transform: rotate(12deg);
+            left: 8px; transform: rotate(12deg);
             transform-origin: top center;
         }
         .figure-arm.right {
-            right: 8px;
-            transform: rotate(-12deg);
+            right: 8px; transform: rotate(-12deg);
             transform-origin: top center;
         }
         .figure-hand {
-            width: 22px;
-            height: 22px;
-            background: #f5cba7;
-            border-radius: 50%;
-            position: absolute;
-            bottom: -5px;
-            left: 50%;
+            width: 22px; height: 22px;
+            background: #f5cba7; border-radius: 50%;
+            position: absolute; bottom: -5px; left: 50%;
             transform: translateX(-50%);
         }
 
-        /* Arm wave animation (only after landing) */
+        /* Jump animation phases */
+        .figure-wrapper.phase-burst {
+            opacity: 1;
+            transform: translateX(-50%) scale(0.5);
+            transition: opacity 0.15s;
+        }
+        .figure-wrapper.phase-jump {
+            opacity: 1;
+            top: 30%;
+            transform: translateX(-50%) scale(0.7) rotate(-5deg);
+            transition: top 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+                        transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .figure-wrapper.phase-air {
+            opacity: 1;
+            top: 40%;
+            transform: translateX(-50%) scale(0.85) rotate(3deg);
+            transition: top 0.3s ease-in,
+                        transform 0.3s ease-in;
+        }
+        .figure-wrapper.phase-land {
+            opacity: 1;
+            top: 48%;
+            transform: translateX(-50%) scale(1) rotate(0deg);
+            transition: top 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .figure-wrapper.phase-settle {
+            opacity: 1;
+            top: 50%;
+            transform: translateX(-50%) scale(1) rotate(0deg);
+            transition: top 0.3s ease-out,
+                        transform 0.3s ease-out;
+        }
+        .figure-wrapper.phase-idle {
+            opacity: 1;
+            top: 50%;
+            transform: translateX(-50%) scale(1);
+            animation: idleFloat 3s ease-in-out infinite;
+        }
+        @keyframes idleFloat {
+            0%, 100% { transform: translateX(-50%) scale(1) translateY(0); }
+            50% { transform: translateX(-50%) scale(1) translateY(-8px); }
+        }
+
+        /* Arm wave (only for CSS fallback figure) */
         .figure-wrapper.phase-idle .figure-arm.right {
             animation: waveRight 3s ease-in-out 0.5s infinite;
         }
@@ -410,7 +378,7 @@
         /* ========== LANDING IMPACT ========== */
         .landing-impact {
             position: absolute;
-            top: 78%;
+            top: 82%;
             left: 50%;
             transform: translateX(-50%);
             width: 200px;
@@ -419,14 +387,11 @@
             opacity: 0;
             pointer-events: none;
         }
-
         .impact-ring {
             position: absolute;
-            bottom: 0;
-            left: 50%;
+            bottom: 0; left: 50%;
             transform: translateX(-50%) scaleY(0.3);
-            width: 0;
-            height: 0;
+            width: 0; height: 0;
             border: 3px solid rgba(0,212,255,0.6);
             border-radius: 50%;
             opacity: 0;
@@ -438,12 +403,10 @@
             0% { width: 20px; height: 20px; opacity: 0.8; }
             100% { width: 180px; height: 180px; opacity: 0; }
         }
-
         .dust-particle {
             position: absolute;
             bottom: 10px;
-            width: 6px;
-            height: 6px;
+            width: 6px; height: 6px;
             background: rgba(255,255,255,0.5);
             border-radius: 50%;
             opacity: 0;
@@ -456,14 +419,13 @@
             100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
         }
 
-        /* Ground glow (appears after landing) */
+        /* Ground glow */
         .ground-glow {
             position: absolute;
-            top: 78%;
+            top: 82%;
             left: 50%;
             transform: translateX(-50%);
-            width: 160px;
-            height: 30px;
+            width: 160px; height: 30px;
             background: radial-gradient(ellipse, rgba(0,212,255,0.4), transparent 70%);
             border-radius: 50%;
             z-index: 13;
@@ -482,7 +444,7 @@
         /* ========== SPEECH BUBBLE ========== */
         .speech-bubble {
             position: absolute;
-            top: 40%;
+            top: 38%;
             left: 50%;
             transform: translateX(-50%) translateY(-100%);
             background: white;
@@ -504,8 +466,7 @@
         .speech-bubble::after {
             content: '';
             position: absolute;
-            bottom: -10px;
-            left: 50%;
+            bottom: -10px; left: 50%;
             transform: translateX(-50%);
             border-left: 10px solid transparent;
             border-right: 10px solid transparent;
@@ -519,7 +480,7 @@
         /* Name badge */
         .name-badge {
             position: absolute;
-            top: 82%;
+            top: 85%;
             left: 50%;
             transform: translateX(-50%);
             background: linear-gradient(135deg, #cc0000, #a00000);
@@ -534,15 +495,12 @@
             transition: opacity 0.5s;
             white-space: nowrap;
         }
-        .name-badge.visible {
-            opacity: 1;
-        }
+        .name-badge.visible { opacity: 1; }
 
         /* CTA at bottom */
         .cta-bar {
             position: fixed;
-            bottom: 0;
-            left: 0;
+            bottom: 0; left: 0;
             width: 100%;
             padding: 15px 20px 25px;
             background: linear-gradient(transparent, rgba(0,0,0,0.7));
@@ -583,8 +541,7 @@
         /* Top badge */
         .top-badge {
             position: fixed;
-            top: 15px;
-            left: 50%;
+            top: 15px; left: 50%;
             transform: translateX(-50%);
             background: rgba(0,0,0,0.5);
             backdrop-filter: blur(10px);
@@ -599,13 +556,12 @@
         }
         .top-badge.visible { opacity: 1; }
 
-        /* Loading state */
+        /* Loading */
         .loading-camera {
             position: fixed;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            color: white;
-            z-index: 50;
+            color: white; z-index: 50;
             text-align: center;
         }
         .loading-camera .spinner {
@@ -618,14 +574,13 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Error state */
+        /* Error */
         .error-msg {
             position: fixed;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 30px;
+            color: white; padding: 30px;
             border-radius: 16px;
             text-align: center;
             z-index: 200;
@@ -663,13 +618,11 @@
             80% { transform: translateX(-50%) rotate(0.5deg); }
         }
 
-        /* Sparkle particles around figure */
+        /* Sparkles */
         .sparkles {
             position: absolute;
-            top: 40%;
-            left: 30%;
-            width: 40%;
-            height: 40%;
+            top: 40%; left: 30%;
+            width: 40%; height: 40%;
             pointer-events: none;
             z-index: 14;
             opacity: 0;
@@ -685,6 +638,21 @@
             25% { transform: translateY(-15px) scale(1.3); opacity: 0.3; }
             50% { transform: translateY(-25px) scale(0.8); opacity: 0.7; }
             75% { transform: translateY(-10px) scale(1.1); opacity: 0.4; }
+        }
+
+        /* Video loading indicator */
+        .video-loading-msg {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: #00d4ff;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 12px;
+            z-index: 25;
+            display: none;
         }
     </style>
 </head>
@@ -724,7 +692,6 @@
                     <div class="billboard-silhouette" id="silhouette">
                         <div class="sil-head"></div>
                     </div>
-                    <!-- Crack overlay -->
                     <div class="billboard-crack" id="billboardCrack"></div>
                 </div>
             </div>
@@ -734,9 +701,23 @@
             </div>
         </div>
 
-        <!-- The jumping figure -->
+        <!-- The jumping figure (video OR CSS fallback) -->
         <div class="figure-wrapper" id="figureWrapper">
-            <div class="figure-body">
+            <!--
+                VIDEO MODE: Place your video file as "jump-video.mp4" in the same folder.
+                The video will play automatically during the jump animation.
+                If the video fails to load, the CSS figure is shown as fallback.
+            -->
+            <video id="jump-video"
+                   playsinline muted
+                   preload="auto"
+                   style="display:none;">
+                <source src="jump-video.mp4" type="video/mp4">
+                <source src="jump-video.webm" type="video/webm">
+            </video>
+
+            <!-- CSS fallback figure (hidden when video loads) -->
+            <div class="figure-body" id="cssFigure">
                 <div class="figure-head">
                     <div class="figure-hair"></div>
                     <div class="figure-eyes">
@@ -784,6 +765,9 @@
         <button class="cta-btn cta-secondary" onclick="shareExperience()">Share</button>
     </div>
 
+    <!-- Video loading message -->
+    <div class="video-loading-msg" id="videoLoadingMsg">Loading video...</div>
+
     <!-- Error message -->
     <div class="error-msg" id="errorMsg">
         <p style="font-size:18px; margin-bottom:10px;">Camera Error</p>
@@ -793,6 +777,38 @@
     </div>
 
     <script>
+        // ========== VIDEO SETUP ==========
+        const jumpVideo = document.getElementById('jump-video');
+        const cssFigure = document.getElementById('cssFigure');
+        let useVideo = false;
+
+        // Try to load the video; if it loads, hide CSS figure
+        jumpVideo.addEventListener('canplaythrough', () => {
+            useVideo = true;
+            jumpVideo.style.display = 'block';
+            cssFigure.style.display = 'none';
+            console.log('Video loaded — using video mode');
+        });
+
+        jumpVideo.addEventListener('error', () => {
+            useVideo = false;
+            jumpVideo.style.display = 'none';
+            cssFigure.style.display = '';
+            console.log('No video found — using CSS figure fallback');
+        });
+
+        // Also handle the source error (fires when source fails)
+        jumpVideo.querySelectorAll('source').forEach((source, i, sources) => {
+            source.addEventListener('error', () => {
+                // If this is the last source, video failed
+                if (i === sources.length - 1) {
+                    useVideo = false;
+                    jumpVideo.style.display = 'none';
+                    cssFigure.style.display = '';
+                }
+            });
+        });
+
         // ========== SPARKLE PARTICLES ==========
         function createSparkles() {
             const container = document.getElementById('sparkles');
@@ -818,7 +834,7 @@
         }
         createSparkles();
 
-        // ========== DUST PARTICLES FOR LANDING ==========
+        // ========== DUST PARTICLES ==========
         function createDustParticles() {
             const impact = document.getElementById('landingImpact');
             for (let i = 0; i < 12; i++) {
@@ -829,13 +845,12 @@
                 p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
                 p.style.setProperty('--dy', (Math.sin(angle) * dist - 20) + 'px');
                 p.style.left = '50%';
-                p.dataset.index = i;
                 impact.appendChild(p);
             }
         }
         createDustParticles();
 
-        // ========== CRACK LINES ON BILLBOARD ==========
+        // ========== CRACK LINES ==========
         function createCrackLines() {
             const crack = document.getElementById('billboardCrack');
             const lines = [
@@ -908,57 +923,60 @@
             impactRing2.classList.remove('animate');
             dustParticles.forEach(p => p.classList.remove('animate'));
 
-            // Clear speech interval
             if (speechInterval) clearInterval(speechInterval);
 
-            // Timeline
-            // 0ms - Billboard is visible, silhouette shows
+            // Reset video to beginning
+            if (useVideo) {
+                jumpVideo.currentTime = 0;
+                jumpVideo.pause();
+            }
 
-            // 1000ms - Billboard starts shaking, cracks appear
+            // === TIMELINE ===
+
+            // 1000ms - Billboard shakes, cracks appear
             setTimeout(() => {
                 billboard.classList.add('shake');
                 crack.classList.add('active');
             }, 1000);
 
-            // 1400ms - Flash! Figure bursts out
+            // 1400ms - Flash! Figure bursts out, video starts playing
             setTimeout(() => {
                 flash.classList.add('flash');
                 silhouette.classList.add('gone');
                 figure.classList.add('phase-burst');
+
+                if (useVideo) {
+                    jumpVideo.play().catch(() => {});
+                }
+
                 setTimeout(() => flash.classList.remove('flash'), 500);
             }, 1400);
 
-            // 1600ms - Figure jumps upward
+            // 1600ms - Jump upward
             setTimeout(() => {
                 figure.className = 'figure-wrapper phase-jump';
             }, 1600);
 
-            // 2000ms - Figure is in the air
+            // 2000ms - In the air
             setTimeout(() => {
                 figure.className = 'figure-wrapper phase-air';
             }, 2000);
 
-            // 2300ms - Figure lands
+            // 2300ms - Landing
             setTimeout(() => {
                 figure.className = 'figure-wrapper phase-land';
-
-                // Impact effects
                 impactRing1.classList.add('animate');
                 setTimeout(() => impactRing2.classList.add('animate'), 100);
-
-                // Dust burst
                 dustParticles.forEach(p => p.classList.add('animate'));
-
-                // Ground glow
                 groundGlow.classList.add('visible');
             }, 2300);
 
-            // 2600ms - Figure settles
+            // 2600ms - Settle
             setTimeout(() => {
                 figure.className = 'figure-wrapper phase-settle';
             }, 2600);
 
-            // 3000ms - Figure goes idle, show UI
+            // 3000ms - Idle
             setTimeout(() => {
                 figure.className = 'figure-wrapper phase-idle';
                 sparkles.classList.add('visible');
@@ -979,7 +997,7 @@
                 ctaBar.classList.add('visible');
             }, 4000);
 
-            // 5000ms - Start speech rotation
+            // 5000ms - Speech rotation
             setTimeout(() => {
                 speechInterval = setInterval(rotateSpeech, 4000);
             }, 5000);
@@ -1007,7 +1025,6 @@
                 video.srcObject = stream;
                 await video.play();
 
-                // Don't mirror back camera
                 const track = stream.getVideoTracks()[0];
                 const settings = track.getSettings();
                 if (settings.facingMode !== 'environment') {
@@ -1016,17 +1033,14 @@
 
                 loading.style.display = 'none';
 
-                // Show top badge
                 setTimeout(() => {
                     document.getElementById('topBadge').classList.add('visible');
                 }, 300);
 
-                // Show billboard
                 setTimeout(() => {
                     document.getElementById('billboard').classList.add('visible');
                 }, 600);
 
-                // Run jump sequence after billboard is visible
                 setTimeout(() => {
                     runJumpSequence();
                 }, 1200);
