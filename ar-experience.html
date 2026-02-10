@@ -712,8 +712,7 @@
                    playsinline muted
                    preload="auto"
                    style="display:none;">
-                <source src="jump-video.mp4" type="video/mp4">
-                <source src="jump-video.webm" type="video/webm">
+                <!-- Sources are added dynamically to avoid 404 errors -->
             </video>
 
             <!-- CSS fallback figure (hidden when video loads) -->
@@ -782,32 +781,42 @@
         const cssFigure = document.getElementById('cssFigure');
         let useVideo = false;
 
-        // Try to load the video; if it loads, hide CSS figure
-        jumpVideo.addEventListener('canplaythrough', () => {
-            useVideo = true;
-            jumpVideo.style.display = 'block';
-            cssFigure.style.display = 'none';
-            console.log('Video loaded — using video mode');
-        });
+        // Check if video file exists before loading (avoids 404 errors)
+        async function tryLoadVideo() {
+            const formats = [
+                { file: 'jump-video.mp4', type: 'video/mp4' },
+                { file: 'jump-video.webm', type: 'video/webm' }
+            ];
 
-        jumpVideo.addEventListener('error', () => {
-            useVideo = false;
-            jumpVideo.style.display = 'none';
-            cssFigure.style.display = '';
-            console.log('No video found — using CSS figure fallback');
-        });
+            for (const fmt of formats) {
+                try {
+                    const resp = await fetch(fmt.file, { method: 'HEAD' });
+                    if (resp.ok) {
+                        const source = document.createElement('source');
+                        source.src = fmt.file;
+                        source.type = fmt.type;
+                        jumpVideo.appendChild(source);
+                        jumpVideo.load();
 
-        // Also handle the source error (fires when source fails)
-        jumpVideo.querySelectorAll('source').forEach((source, i, sources) => {
-            source.addEventListener('error', () => {
-                // If this is the last source, video failed
-                if (i === sources.length - 1) {
-                    useVideo = false;
-                    jumpVideo.style.display = 'none';
-                    cssFigure.style.display = '';
+                        await new Promise((resolve, reject) => {
+                            jumpVideo.addEventListener('canplaythrough', resolve, { once: true });
+                            jumpVideo.addEventListener('error', reject, { once: true });
+                        });
+
+                        useVideo = true;
+                        jumpVideo.style.display = 'block';
+                        cssFigure.style.display = 'none';
+                        console.log('Video loaded — using video mode (' + fmt.file + ')');
+                        return;
+                    }
+                } catch (e) {
+                    // This format not available, try next
                 }
-            });
-        });
+            }
+            // No video found — CSS figure will be used
+            console.log('No video found — using CSS figure fallback');
+        }
+        tryLoadVideo();
 
         // ========== SPARKLE PARTICLES ==========
         function createSparkles() {
