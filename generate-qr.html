@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate QR Code for AR Experience</title>
+    <style>
+        body {
+            font-family: -apple-system, sans-serif;
+            max-width: 500px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: white;
+        }
+        h1 { font-size: 22px; margin-bottom: 8px; }
+        p { color: #aaa; font-size: 14px; line-height: 1.5; margin-bottom: 20px; }
+        label { font-size: 14px; display: block; margin-bottom: 6px; }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #16213e;
+            color: white;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        #qr-result {
+            margin-top: 24px;
+            text-align: center;
+        }
+        #qr-result img {
+            border-radius: 12px;
+            background: white;
+            padding: 16px;
+        }
+        .instructions {
+            margin-top: 30px;
+            padding: 16px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+        .instructions code {
+            background: rgba(0,212,255,0.15);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #00d4ff;
+        }
+    </style>
+</head>
+<body>
+    <h1>QR Code Generator</h1>
+    <p>Enter the URL where your AR experience is hosted, then generate a QR code to print or display on a billboard.</p>
+
+    <label for="url">AR Experience URL:</label>
+    <input type="url" id="url" placeholder="https://your-site.com/ar-experience.html" />
+    <button onclick="generateQR()">Generate QR Code</button>
+
+    <div id="qr-result"></div>
+
+    <div class="instructions">
+        <strong>How to deploy:</strong><br>
+        1. Host <code>ar-experience.html</code> on any web server (GitHub Pages, Netlify, Vercel, etc.)<br>
+        2. Paste the URL above and generate the QR code<br>
+        3. Print the QR code and place it on/near the billboard<br>
+        4. When someone scans it, their camera opens and the AR figure jumps out!<br><br>
+        <strong>Quick local test:</strong><br>
+        Run <code>npx serve .</code> in the project folder, then use ngrok or similar to get a public URL.
+    </div>
+
+    <script>
+        function generateQR() {
+            const url = document.getElementById('url').value.trim();
+            if (!url) {
+                alert('Please enter a URL');
+                return;
+            }
+            const qrApiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(url);
+            document.getElementById('qr-result').innerHTML = `
+                <img src="${qrApiUrl}" alt="QR Code" width="300" height="300" /><br>
+                <p style="margin-top:12px; font-size:13px; color:#aaa;">Right-click the image to save it</p>
+            `;
+        }
+    </script>
+</body>
+</html>
